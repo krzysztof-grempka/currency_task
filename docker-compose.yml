@@ -1,0 +1,57 @@
+services:
+    nginx:
+        build:
+            context: ./.docker/nginx
+            args:
+                TIMEZONE: ${TIMEZONE}
+                WORKDIR: ${WORKDIR}
+        container_name: nginx
+        ports:
+            - 80:80
+        volumes:
+            - ./:${WORKDIR}
+            - phpsocket:/run/php
+            - ./.docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
+        networks:
+            - network
+    php:
+        build:
+            context: ./.docker/php
+            args:
+                TIMEZONE: ${TIMEZONE}
+                WORKDIR: ${WORKDIR}
+                PHP_UPLOAD_LIMIT: ${PHP_UPLOAD_LIMIT}
+                PHP_MEMORY_LIMIT: ${PHP_MEMORY_LIMIT}
+        container_name: php
+        volumes:
+            - ./:${WORKDIR}
+            - var:${WORKDIR}/var/
+            - vendor:${WORKDIR}/vendor/
+            - phpsocket:/run/php
+            - ./.docker/php/zz-docker.conf:/usr/local/etc/php-fpm.d/zz-docker.conf
+            - ./.docker/php/supervisor:/etc/supervisor.d
+        networks:
+            - network
+    mysql:
+        image: mysql:8.0.33
+        container_name: mysql
+        restart: always
+        command: --default-authentication-plugin=mysql_native_password
+        ports:
+            - 3310:3306
+        environment:
+            MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+            MYSQL_DATABASE: ${MYSQL_DATABASE}
+        volumes:
+            - ./.docker/mysql/data:/var/lib/mysql
+        networks:
+            - network
+
+volumes:
+    phpsocket:
+    var:
+    vendor:
+    modules:
+
+networks:
+    network:
